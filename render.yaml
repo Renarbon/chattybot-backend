@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: chattybot-grammar-correction
+    env: python
+    plan: free
+    buildCommand: ""
+    startCommand: python grammar_server.py
+    envVars:
+      - key: OPENAI_API_KEY
+        value: YOUR_OPENAI_KEY_HERE
