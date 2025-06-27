@@ -3,8 +3,8 @@ services:
     name: chattybot-grammar-correction
     env: python
     plan: free
-    buildCommand: ""
+    buildCommand: pip install -r requirements.txt
     startCommand: python grammar_server.py
     envVars:
       - key: OPENAI_API_KEY
-        value: YOUR_OPENAI_KEY_HERE
+        sync: false  # set this in Render's dashboard
