@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import openai
@@ -6,8 +7,7 @@ import traceback
 app = Flask(__name__)
 CORS(app)
 
-OPENAI_API_KEY = "here"   # <--- paste your real key here
-
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 @app.route("/api/grammar-correct", methods=["POST"])
@@ -34,7 +34,6 @@ def correct_grammar():
             temperature=0.2
         )
         reply = response.choices[0].message.content.strip()
-        # Parse feedback/correction
         feedback, correction = "", ""
         for line in reply.splitlines():
             if line.lower().startswith("feedback:"):
@@ -50,9 +49,8 @@ def correct_grammar():
         traceback.print_exc()
         return jsonify({"feedback": "API error.", "correction": "", "error": str(e)}), 500
 
-import os
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # Use Render's port if available, else 10000
+    port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
