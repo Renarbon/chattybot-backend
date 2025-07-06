@@ -1,56 +1,62 @@
-import os
-from flask import Flask, request, jsonify
+# grammar_server.py (updated backend with ElevenLabs TTS support)
+
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import openai
-import traceback
+import os
+import requests
+from io import BytesIO
 
 app = Flask(__name__)
 CORS(app)
 
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-client = openai.OpenAI(api_key=OPENAI_API_KEY)
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+elevenlabs_api_key = os.getenv("ELEVEN_API_KEY")
 
 @app.route("/api/grammar-correct", methods=["POST"])
 def correct_grammar():
     data = request.get_json()
-    text = data.get("text", "")
-
-    prompt = (
-        "You are an English teacher. Please analyze the student's spoken answer below. "
-        "1. Give a brief feedback on their grammar (1-2 sentences). "
-        "2. Then rewrite their answer in perfect English (as you would say it). "
-        "Format your answer as:\n\nFeedback: ...\nCorrection: ...\n\n"
-        f"Student's answer: {text}"
-    )
+    prompt = f"Correct the grammar of this sentence: {data['text']}"
 
     try:
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a helpful English teacher."},
                 {"role": "user", "content": prompt}
-            ],
-            max_tokens=300,
-            temperature=0.2
+            ]
         )
-        reply = response.choices[0].message.content.strip()
-        feedback, correction = "", ""
-        for line in reply.splitlines():
-            if line.lower().startswith("feedback:"):
-                feedback = line[9:].strip()
-            if line.lower().startswith("correction:"):
-                correction = line[11:].strip()
-        if not feedback or not correction:
-            feedback = reply
-            correction = ""
-        return jsonify({"feedback": feedback, "correction": correction})
+        corrected = response['choices'][0]['message']['content']
+        return jsonify({"corrected": corrected})
 
     except Exception as e:
-        traceback.print_exc()
-        return jsonify({"feedback": "API error.", "correction": "", "error": str(e)}), 500
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/tts", methods=["POST"])
+def tts():
+    data = request.get_json()
+    text = data.get("text")
+    voice_id = data.get("voice_id", "3kmhLabcqbsGhEd3mEhD")
+
+    headers = {
+        "xi-api-key": elevenlabs_api_key,
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "text": text
+    }
+
+    tts_url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=mp3_22050_32"
+    response = requests.post(tts_url, headers=headers, json=payload)
+
+    if response.status_code == 200:
+        return send_file(BytesIO(response.content), mimetype='audio/mpeg')
+    else:
+        return jsonify({"error": "TTS request failed", "details": response.text}), 500
+
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
-
-
+    app.run(debug=True)
