@@ -29,6 +29,9 @@ def correct_grammar():
     except Exception as e:
         print("Error in grammar-correct:", e)
         return jsonify({"error": str(e)}), 500
-
+@app.route("/api/check-key")
+def check_key():
+    import openai
+    return jsonify({"key_present": bool(openai.api_key)})
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
