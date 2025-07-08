@@ -6,8 +6,8 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-import os
 openai.api_key = os.environ.get("OPENAI_API_KEY")
+
 @app.route("/api/grammar-correct", methods=["POST"])
 def correct_grammar():
     try:
@@ -29,9 +29,28 @@ def correct_grammar():
     except Exception as e:
         print("Error in grammar-correct:", e)
         return jsonify({"error": str(e)}), 500
+
+@app.route("/api/chatbot", methods=["POST"])
+def chatbot_reply():
+    try:
+        data = request.get_json()
+        messages = data.get("messages", [])
+        model = data.get("model", "gpt-4o")
+        response = openai.chat.completions.create(
+            model=model,
+            messages=messages,
+            max_tokens=150,
+            temperature=0.7,
+        )
+        bot_reply = response.choices[0].message.content
+        return jsonify({"reply": bot_reply})
+    except Exception as e:
+        print("Error in chatbot:", e)
+        return jsonify({"reply": "Sorry, I couldn't connect to the server."}), 500
+
 @app.route("/api/check-key")
 def check_key():
-    import openai
     return jsonify({"key_present": bool(openai.api_key)})
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
