@@ -7,7 +7,7 @@ app = Flask(__name__)
 CORS(app)
 
 openai.api_key = os.environ.get("OPENAI_API_KEY")
-
+LEMONFOX_API_KEY = os.environ.get("LEMONFOX_API_KEY")  # Set in your environment variables
 @app.route("/api/grammar-correct", methods=["POST"])
 def correct_grammar():
     try:
