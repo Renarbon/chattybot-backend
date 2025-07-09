@@ -1,13 +1,15 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response  # Added Response
 from flask_cors import CORS
 import openai
 import os
+import requests  # Added requests
 
 app = Flask(__name__)
 CORS(app)
 
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 LEMONFOX_API_KEY = os.environ.get("LEMONFOX_API_KEY")  # Set in your environment variables
+
 @app.route("/api/grammar-correct", methods=["POST"])
 def correct_grammar():
     try:
@@ -51,6 +53,32 @@ def chatbot_reply():
 @app.route("/api/check-key")
 def check_key():
     return jsonify({"key_present": bool(openai.api_key)})
+
+# -------------------------------
+# Lemonfox TTS proxy endpoint!
+# -------------------------------
+@app.route('/api/lemonfox-tts', methods=['POST'])
+def lemonfox_tts():
+    data = request.get_json()
+    text = data.get('input', '')
+    voice = data.get('voice', 'adam')
+    lf_response = requests.post(
+        'https://api.lemonfox.ai/v1/audio/speech',
+        headers={
+            'Authorization': f'Bearer {LEMONFOX_API_KEY}',
+            'Content-Type': 'application/json',
+        },
+        json={
+            'input': text,
+            'voice': voice,
+            'response_format': 'mp3'
+        },
+        stream=True
+    )
+    if not lf_response.ok:
+        return ("Lemonfox error: " + lf_response.text, 400)
+    return Response(lf_response.content, mimetype='audio/mpeg')
+# -------------------------------
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
