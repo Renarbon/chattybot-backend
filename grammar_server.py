@@ -50,25 +50,25 @@ def chatbot():
 @app.route('/api/lemonfox-tts', methods=['POST'])
 def lemonfox_tts():
     data = request.get_json()
-    print("Received data:", data)   # This will log what you get from the frontend!
-    text = data.get('text', '')
-    voice = data.get('voice', 'default')
+    print("Received data:", data)
+    # Accept both "text" and "input" for flexibility (frontends may vary)
+    text = data.get('text') or data.get('input', '')
+    voice = data.get('voice', 'en-US-AndyNeural')
     if not text:
         print("No text provided.")
         return "No text provided", 400
-   response = requests.post(
-    "https://api.lemonfox.ai/v1/audio/speech",  # NEW ENDPOINT
-    headers={"Authorization": f"Bearer {LEMONFOX_API_KEY}"},
-    json={
-        "input": text,
-        "voice": voice,
-        "response_format": "mp3"
-    },
-    stream=True
-)
-
+    response = requests.post(
+        "https://api.lemonfox.ai/v1/audio/speech",
+        headers={"Authorization": f"Bearer {LEMONFOX_API_KEY}",
+                 "Content-Type": "application/json"},
+        json={
+            "input": text,
+            "voice": voice,
+            "response_format": "mp3"
+        }
+    )
     print("Lemonfox status:", response.status_code)
-    print("Lemonfox response:", response.text[:500])  # Print first 500 chars of response for debugging
+    print("Lemonfox response:", response.text[:500])  # Print first 500 chars for debugging
     if not response.ok:
         return ("Lemonfox error: " + response.text, 400)
     return Response(response.content, mimetype="audio/mpeg")
