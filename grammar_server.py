@@ -56,12 +56,17 @@ def lemonfox_tts():
     if not text:
         print("No text provided.")
         return "No text provided", 400
-    response = requests.post(
-        "https://api.lemonfox.ai/tts/stream",
-        headers={"Authorization": f"Bearer {LEMONFOX_API_KEY}"},
-        json={"text": text, "voice": voice},
-        stream=True
-    )
+   response = requests.post(
+    "https://api.lemonfox.ai/v1/audio/speech",  # NEW ENDPOINT
+    headers={"Authorization": f"Bearer {LEMONFOX_API_KEY}"},
+    json={
+        "input": text,
+        "voice": voice,
+        "response_format": "mp3"
+    },
+    stream=True
+)
+
     print("Lemonfox status:", response.status_code)
     print("Lemonfox response:", response.text[:500])  # Print first 500 chars of response for debugging
     if not response.ok:
