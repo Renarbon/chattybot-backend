@@ -80,7 +80,7 @@ def elevenlabs_tts():
     if not text:
         return "No text provided", 400
     ELEVENLABS_API_KEY = os.environ.get("ELEVEN_API_KEY")  # Use your actual env var name!
-    VOICE_ID = "3kmhLabcqbsGhEd3mEhD"  # Your chosen ElevenLabs voice
+    VOICE_ID = "ds0uumbpvplhO4tyz2yF"  # Your chosen ElevenLabs voice
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}/stream"
     headers = {
         "xi-api-key": ELEVENLABS_API_KEY,
