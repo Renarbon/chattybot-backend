@@ -18,31 +18,32 @@ def grammar_correct():
     text = data.get('text', '')
     if not text:
         return jsonify({'error': 'No text provided'}), 400
-    prompt = f"Correct any grammar mistakes in this English sentence or passage and return only the corrected version:\n\n{text}"
+
+    prompt = (
+        "Analyze the following English text for grammar mistakes. "
+        "First, provide a short FEEDBACK summary explaining any typical errors or issues found (if any). "
+        "Second, give a SUGGESTED CORRECTION with improved grammar. "
+        "Reply in JSON format with keys 'feedback' and 'correction'.\n\n"
+        f"{text}"
+    )
     try:
         completion = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}]
         )
-        corrected = completion.choices[0].message['content'].strip()
-        return jsonify({'corrected': corrected})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import json
+        response_content = completion.choices[0].message['content'].strip()
+        # Try to parse GPT output as JSON
+        try:
+            result = json.loads(response_content)
+            feedback = result.get("feedback", "")
+            correction = result.get("correction", "")
+        except Exception:
+            # Fallback: if GPT does not return JSON, treat the whole output as correction
+            feedback = ""
+            correction = response_content
 
-# === Chatbot Reply Endpoint ===
-@app.route('/api/chatbot', methods=['POST'])
-def chatbot():
-    data = request.get_json()
-    messages = data.get('messages', [])
-    if not messages:
-        return jsonify({'error': 'No messages provided'}), 400
-    try:
-        completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=messages
-        )
-        reply = completion.choices[0].message['content'].strip()
-        return jsonify({'reply': reply})
+        return jsonify({'feedback': feedback, 'correction': correction})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -103,3 +104,4 @@ if __name__ == '__main__':
     import os
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
