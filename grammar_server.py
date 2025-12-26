@@ -6,6 +6,8 @@ import requests
 
 app = Flask(__name__)
 # Configure CORS to allow all origins for API endpoints
+# NOTE: If you need to restrict origins in production, replace "*" with specific domains:
+# CORS(app, resources={r"/api/*": {"origins": ["https://yourdomain.com"], ...}})
 CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}})
 
 # Set your OpenAI API key via environment variable or here directly (not recommended)
