@@ -18,6 +18,9 @@ LEMONFOX_API_KEY = os.environ.get("LEMONFOX_API_KEY")  # Lemonfox TTS key
 @app.route('/api/chatbot', methods=['POST'])
 def chatbot():
     data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Invalid JSON or Content-Type must be application/json'}), 400
+    
     message = data.get('message', '')
     if not message:
         return jsonify({'error': 'No message provided'}), 400
@@ -27,6 +30,8 @@ def chatbot():
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": message}]
         )
+        if not completion.choices:
+            return jsonify({'error': 'No response from OpenAI'}), 500
         response_content = completion.choices[0].message['content'].strip()
         return jsonify({'response': response_content})
     except Exception as e:
