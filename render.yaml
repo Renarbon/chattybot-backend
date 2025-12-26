@@ -4,7 +4,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: python grammar_server.py
+    startCommand: gunicorn --bind 0.0.0.0:$PORT grammar_server:app
     envVars:
       - key: OPENAI_API_KEY
         sync: false  # set this in Render's dashboard

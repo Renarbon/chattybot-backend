@@ -5,11 +5,37 @@ import os
 import requests
 
 app = Flask(__name__)
-CORS(app)
+# Configure CORS to allow all origins for API endpoints
+# NOTE: If you need to restrict origins in production, replace "*" with specific domains:
+# CORS(app, resources={r"/api/*": {"origins": ["https://yourdomain.com"], ...}})
+CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}})
 
 # Set your OpenAI API key via environment variable or here directly (not recommended)
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 LEMONFOX_API_KEY = os.environ.get("LEMONFOX_API_KEY")  # Lemonfox TTS key
+
+# === Chatbot Endpoint ===
+@app.route('/api/chatbot', methods=['POST'])
+def chatbot():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Invalid JSON or Content-Type must be application/json'}), 400
+    
+    message = data.get('message', '')
+    if not message:
+        return jsonify({'error': 'No message provided'}), 400
+
+    try:
+        completion = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": message}]
+        )
+        if not completion.choices:
+            return jsonify({'error': 'No response from OpenAI'}), 500
+        response_content = completion.choices[0].message['content'].strip()
+        return jsonify({'response': response_content})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # === Grammar Correction Endpoint ===
 @app.route('/api/grammar-correct', methods=['POST'])
